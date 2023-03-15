@@ -34,13 +34,13 @@ args = parser.parse_args()
 # Get configs
 config_path = args.config
 config = configparser.ConfigParser(allow_no_value=True)
-try: 
+try:
   config.read(config_path)
 except FileNotFoundError:
   print('Config File Not Found at {}'.format(config_path))
   sys.exit()
 
-# Import audio configs 
+# Import audio configs
 sampling_rate = config['audio'].getint('sampling_rate')
 hop_length = config['audio'].getint('hop_length')
 segment_length = config['audio'].getint('segment_length')
@@ -60,7 +60,7 @@ dataset_test_audio = dataset / test_audio
 if not dataset_test_audio.exists():
   raise FileNotFoundError(dataset_test_audio.resolve())
 
-generate_test = config['dataset'].get('generate_test')    
+generate_test = config['dataset'].get('generate_test')
 
 # Training configs
 epochs = config['training'].getint('epochs')
@@ -85,9 +85,10 @@ start_time = time.time()
 config['extra']['start'] = time.asctime( time.localtime(start_time) )
 
 device = torch.device(device)
-device_name = torch.cuda.get_device_name()
-print('Device: {}'.format(device_name))
-config['VAE']['device_name'] = device_name
+if torch.cuda.is_available():
+    device_name = torch.cuda.get_device_name()
+    print('Device: {}'.format(device_name))
+    config['VAE']['device_name'] = device_name
 
 # Create workspace
 run_id = run_number
@@ -95,7 +96,7 @@ while True:
     try:
         my_runs = dataset / desc
         run_name = 'run-{:03d}'.format(run_id)
-        workdir = my_runs / run_name 
+        workdir = my_runs / run_name
         os.makedirs(workdir)
 
         break
@@ -114,7 +115,7 @@ print('creating the dataset...')
 training_array = []
 new_loop = True
 
-for f in my_audio.glob('*.wav'): 
+for f in my_audio.glob('*.wav'):
   print('adding-> %s' % f.stem)
   new_array, _ = librosa.load(f, sr=sampling_rate)
 
@@ -162,15 +163,15 @@ best_loss = 1000000
 final_loss = 1000000
 
 for epoch in range(epochs):
-  
+
   print('Epoch {}/{}'.format(epoch, epochs - 1))
   print('-' * 10)
 
   model.train()
   train_loss = 0
-  
+
   for i, data in enumerate(training_dataloader):
-    
+
     # data, = data
     data = data.to(device)
     optimizer.zero_grad()
@@ -179,43 +180,43 @@ for epoch in range(epochs):
     loss.backward()
     train_loss += loss.item()
     optimizer.step()
-  
+
   print('====> Epoch: {} - Total loss: {} - Average loss: {:.9f}'.format(
           epoch, train_loss, train_loss / len(training_dataset)))
-  
-  if epoch % checkpoint_interval == 0 and epoch != 0: 
+
+  if epoch % checkpoint_interval == 0 and epoch != 0:
     print('Checkpoint - Epoch {}'.format(epoch))
     state = {
       'epoch': epoch,
       'state_dict': model.state_dict(),
       'optimizer': optimizer.state_dict()
     }
-    
+
     if generate_test:
-      
+
       init_test = True
-      
+
       for iterno, test_sample in enumerate(test_dataloader):
         with torch.no_grad():
           test_sample = test_sample.to(device)
           test_pred = model(test_sample)[0]
-        
+
         if init_test:
           test_predictions = test_pred
           init_test = False
-        
+
         else:
           test_predictions = torch.cat(test_predictions, test_pred, 0)
-        
+
       audio_out = audio_log_dir.joinpath('test_reconst_{:05d}.wav'.format( epoch))
       test_predictions_np = test_predictions.view(-1).cpu().numpy()
       sf.write( audio_out, test_predictions_np, sampling_rate)
       print('Audio examples generated: {}'.format(audio_out))
-    
+
     torch.save(state, checkpoint_dir.joinpath('ckpt_{:05d}'.format(epoch)))
-  
+
     if (train_loss < train_loss_prev) and (epoch > save_best_model_after):
-      
+
       save_path = workdir.joinpath('model').joinpath('best_model.pt')
       torch.save(model, save_path)
       print('Epoch {:05d}: Saved {}'.format(epoch, save_path))
@@ -224,7 +225,7 @@ for epoch in range(epochs):
 
     elif (train_loss > train_loss_prev):
       print("Average loss did not improve.")
-  
+
   final_loss = train_loss
 
 print('Last Checkpoint - Epoch {}'.format(epoch))
@@ -235,21 +236,21 @@ state = {
 }
 
 if generate_test:
-      
+
   init_test = True
-  
+
   for iterno, test_sample in enumerate(test_dataloader):
     with torch.no_grad():
       test_sample = test_sample.to(device)
       test_pred = model(test_sample)[0]
-  
+
     if init_test:
       test_predictions = test_pred
       init_test = False
-    
+
     else:
       test_predictions = torch.cat(test_predictions, test_pred, 0)
-    
+
   audio_out = audio_log_dir.joinpath('test_reconst_{:05d}.wav'.format(epochs))
   test_predictions_np = test_predictions.view(-1).cpu().numpy()
   sf.write( audio_out, test_predictions_np, sampling_rate)
@@ -265,8 +266,8 @@ if train_loss > train_loss_prev:
   print("Final loss was not better than the last best model.")
   print("Final Loss: {}".format(final_loss))
   print("Best Loss: {}".format(best_loss))
-  
-  # Save the last model using torch.save 
+
+  # Save the last model using torch.save
   save_path = workdir.joinpath('model').joinpath('last_model.pt')
   torch.save(model, save_path)
   print('Training Finished: Saved the last model')
