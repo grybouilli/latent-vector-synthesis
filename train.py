@@ -206,7 +206,7 @@ for epoch in range(epochs):
           init_test = False
 
         else:
-          test_predictions = torch.cat(test_predictions, test_pred, 0)
+          test_predictions = torch.cat((test_predictions, test_pred), 0)
 
       audio_out = audio_log_dir.joinpath('test_reconst_{:05d}.wav'.format( epoch))
       test_predictions_np = test_predictions.view(-1).cpu().numpy()
@@ -249,7 +249,7 @@ if generate_test:
       init_test = False
 
     else:
-      test_predictions = torch.cat(test_predictions, test_pred, 0)
+      test_predictions = torch.cat((test_predictions, test_pred), 0)
 
   audio_out = audio_log_dir.joinpath('test_reconst_{:05d}.wav'.format(epochs))
   test_predictions_np = test_predictions.view(-1).cpu().numpy()
