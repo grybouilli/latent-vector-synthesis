@@ -13,6 +13,15 @@ import warnings
 import sounddevice as sd
 import json
 
+import torch
+from torch.utils.data import Dataset, TensorDataset, DataLoader
+from torch import nn, optim
+from torch.nn import functional as F
+from torchvision import datasets, transforms
+
+from rawvae.model import VAE, loss_function
+from rawvae.dataset import AudioDataset, ToTensor
+
 sampling_rate = 44100
 sample_size = 600
 f0 = sampling_rate / sample_size
@@ -20,49 +29,136 @@ f0 = sampling_rate / sample_size
 audio_fold = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/audio')
 audio_files = [f for f in audio_fold.glob('*.wav')]
 
-waveforms = np.zeros((4, sample_size))
+waveforms = np.zeros((4, sample_size)).astype('float32')
 
-x, y = 0
+x = 0
+y = 0
 
-def get_random_wave(audio_files):
+latent_space = False
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+segment_length = 600
+hop_length = 600
+n_units = 2048
+latent_dim = 256
+
+mu = torch.zeros(4, latent_dim)
+logvar = torch.zeros(4, latent_dim)
+predictions = np.zeros((4, sample_size)).astype('float32')
+
+model = VAE(segment_length, n_units, latent_dim).to(device)
+checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-001/model/checkpoints/ckpt_00990')
+state = torch.load(checkpoint_path, map_location=torch.device(device))
+model.load_state_dict(state['state_dict'])
+model.eval()
+
+#################### WAVEFORM ####################
+def get_wave_random():
     path = audio_files[random.randint(0, len(audio_files) - 1)]
     wave, _ = librosa.load(path, sr=None)
+
     return wave
 
-def morph2d(x, y):
-    v = np.array([(1-x)*(1-y), x*(1-y), (1-x)*y, x*y])
-    return np.matmul(np.transpose(waveforms), v)
-    # waveforms[0,:]*v[0] + waveforms[1,:]*v[1] + waveforms[2,:]*v[2] + waveforms[3,:]*v[3]
+def get_prediction(wave):
+    with torch.no_grad():
+        latent_mu, latent_logvar  = model.encode(torch.tensor(wave))
+        latent_z = model.reparameterize(latent_mu, latent_logvar)
+        pred = model.decode(latent_z)
 
+    return pred, latent_mu, latent_logvar
 
-def initialize(address: str, *osc_arguments: List[Any]) -> None:
-    client.send_message("/init", get_random_wave(audio_files).tolist())
-    randomize("/randomize")
-
-def randomize(address: str, *osc_arguments: List[Any]) -> None:
+def set_wave_random(index):
     global waveforms
 
+    waveforms[index, :] = get_wave_random()
+
+    if latent_space:
+        set_prediction(index)
+
+def set_waveforms_random():
     for i in range(4):
-        wave = get_random_wave(audio_files)
-        waveforms[i, :] = wave
-        client.send_message("/waveform/" + chr(i+65), wave.tolist())
+        set_wave_random(i)
 
-def get_wave(address: str, *osc_arguments: List[Any]) -> None:
+def set_prediction(index):
+    global predictions, mu, logvar
+
+    pred, latent_mu, latent_logvar = get_prediction(waveforms[index, :])
+
+    mu[index, :] = latent_mu
+    logvar[index, :] = latent_logvar
+    predictions[index, :] = pred.numpy()
+
+def set_predictions():
+    for i in range(4):
+        set_prediction(i)
+
+def interpolate2d(x, y):
+    v = np.array([(1-x)*(1-y), x*(1-y), (1-x)*y, x*y]).astype('float32')
+
+    if latent_space:
+        v = torch.tensor(v)
+        inter_mu = torch.matmul(torch.t(mu), v)
+        inter_logvar = torch.matmul(torch.t(logvar), v)
+
+        with torch.no_grad():
+            latent_z = model.reparameterize(inter_mu, inter_logvar)
+            interp = model.decode(latent_z).numpy()
+    else:
+        interp = np.matmul(np.transpose(waveforms), v)
+
+    return interp
+
+#################### OSC ####################
+def reset(address: str, *osc_arguments: List[Any]) -> None:
     global waveforms
-    wave = get_random_wave(audio_files)
-    index = int(osc_arguments[0])
-    waveforms[index, :] = wave
 
-    client.send_message("/waveform/" + chr(index+65), wave.tolist())
+    waveforms = np.zeros((4, sample_size)).astype('float32')
+    client.send_message("/reset", get_wave_random().tolist())
+    send_waveforms()
+
+def randomize_all(address: str, *osc_arguments: List[Any]) -> None:
+    set_waveforms_random()
+    send_waveforms()
+
+def set_random(address: str, *osc_arguments: List[Any]) -> None:
+    index = int(osc_arguments[0])
+    set_wave_random(index)
+    send_wave(index)
 
 def morph(address: str, *osc_arguments: List[Any]) -> None:
     global x, y
     x = osc_arguments[0]
     y = osc_arguments[1]
 
-    wave = morph2d(x, y)
+    output = interpolate2d(x, y)
+    send_output(output)
 
-    client.send_message("/waveform/output", wave.tolist())
+def send_wave(index):
+    if latent_space:
+        client.send_message("/waveform/" + chr(index+65), predictions[index, :].tolist())
+    else:
+        client.send_message("/waveform/" + chr(index+65), waveforms[index, :].tolist())
+
+    output = interpolate2d(x, y)
+    send_output(output)
+
+def send_output(output):
+    client.send_message("/waveform/output", output.tolist())
+
+def send_waveforms():
+    for i in range(4):
+        send_wave(i)
+
+def toggle_latent(address: str, *osc_arguments: List[Any]) -> None:
+    global latent_space
+
+    latent_space = bool(osc_arguments[0])
+
+    if latent_space:
+        set_predictions()
+
+    send_waveforms()
 
 if __name__ == "__main__":
     #Parse arguments
@@ -91,10 +187,11 @@ if __name__ == "__main__":
 
 
     dispatcher = dispatcher.Dispatcher()
-    dispatcher.map("/initialize", initialize)
-    dispatcher.map("/randomize", randomize)
-    dispatcher.map("/waveform", get_wave)
+    dispatcher.map("/reset", reset)
+    dispatcher.map("/randomize", randomize_all)
+    dispatcher.map("/waveform", set_random)
     dispatcher.map("/morphing", morph)
+    dispatcher.map("/latent", toggle_latent)
 
     server = osc_server.ThreadingOSCUDPServer(
       (args.receiveIP, args.receivePORT), dispatcher)
