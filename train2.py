@@ -8,7 +8,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms
 
-from rawvae.model import VAE, loss_function
+from rawvae.model import VAE_2, loss_function
 from rawvae.tests import init_test_audio
 from rawvae.dataset import AudioDataset, ToTensor
 
@@ -28,7 +28,7 @@ import pdb
 
 # Parse arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=str, default ='./default.ini' , help='path to the config file')
+parser.add_argument('--config', type=str, default ='./default2.ini' , help='path to the config file')
 args = parser.parse_args()
 
 # Get configs
@@ -72,6 +72,7 @@ save_best_model_after = config['training'].getint('save_best_model_after')
 # Model configs
 latent_dim = config['VAE'].getint('latent_dim')
 n_units = config['VAE'].getint('n_units')
+n_hidden = config['VAE'].getint('n_hidden')
 kl_beta = config['VAE'].getfloat('kl_beta')
 device = config['VAE'].get('device')
 
@@ -156,7 +157,7 @@ if generate_test:
 
 # Neural Network
 
-model = VAE(segment_length, n_units, latent_dim).to(device)
+model = VAE_2(segment_length, n_hidden, n_units, latent_dim).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Some dummy variables to keep track of loss situation
@@ -165,9 +166,9 @@ train_loss_prev = 1000000
 best_loss = 1000000
 final_loss = 1000000
 
-# plot
 y_loss = []
 x_epoch = []
+
 fig, ax = plt.subplots(1, 1)
 
 def draw_curve(current_epoch):
