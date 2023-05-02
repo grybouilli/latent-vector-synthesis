@@ -34,43 +34,6 @@ class VAE(nn.Module):
       z = self.reparameterize(mu, logvar)
       return self.decode(z), mu, logvar
 
-class VAE_2(nn.Module):
-  def __init__(self, segment_length, n_hidden, n_units, latent_dim):
-    super(VAE_2, self).__init__()
-
-    self.segment_length = segment_length
-    self.n_hidden = n_hidden
-    self.n_units = n_units
-    self.latent_dim = latent_dim
-
-    self.fc1 = nn.Linear(segment_length, n_hidden)
-    self.fc2 = nn.Linear(n_hidden, n_units)
-    self.fc31 = nn.Linear(n_units, latent_dim)
-    self.fc32 = nn.Linear(n_units, latent_dim)
-    self.fc4 = nn.Linear(latent_dim, n_hidden)
-    self.fc5 = nn.Linear(n_hidden, n_units)
-    self.fc6 = nn.Linear(n_units, segment_length)
-
-  def encode(self, x):
-      h1 = F.relu(self.fc1(x))
-      h2 = F.relu(self.fc2(h1))
-      return self.fc31(h2), self.fc32(h2)
-
-  def reparameterize(self, mu, logvar):
-      std = torch.exp(0.5*logvar)
-      eps = torch.randn_like(std)
-      return mu + eps*std
-
-  def decode(self, z):
-      h4 = F.relu(self.fc4(z))
-      h5 = F.relu(self.fc5(h4))
-      return F.tanh(self.fc6(h5))
-
-  def forward(self, x):
-      mu, logvar = self.encode(x.view(-1, self.segment_length))
-      z = self.reparameterize(mu, logvar)
-      return self.decode(z), mu, logvar
-
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar, kl_beta, segment_length):
   recon_loss = F.mse_loss(recon_x, x.view(-1, segment_length))

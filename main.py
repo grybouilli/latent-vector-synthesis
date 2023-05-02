@@ -26,38 +26,35 @@ sampling_rate = 44100
 sample_size = 600
 f0 = sampling_rate / sample_size
 
-audio_fold = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/audio')
+audio_fold = Path(r'/Users/david/Documents/GitHub/latent-vector-synthesis/content/audio')
 audio_files = [f for f in audio_fold.glob('*.wav')]
 
-waveforms = np.zeros((4, sample_size)).astype('float32')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 x = 0
 y = 0
 
 latent_space = False
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 segment_length = 600
 hop_length = 600
 n_units = 2048
 latent_dim = 256
 
+waveforms = np.zeros((4, sample_size)).astype('float32')
 mu = torch.zeros(4, latent_dim)
 logvar = torch.zeros(4, latent_dim)
 predictions = np.zeros((4, sample_size)).astype('float32')
 
 model = VAE(segment_length, n_units, latent_dim).to(device)
 checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-001/model/checkpoints/ckpt_00990')
-# checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-002/model/checkpoints/ckpt_00360')
-# checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-003/model/checkpoints/ckpt_01000')
-# checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-004/model/checkpoints/ckpt_01000')
 state = torch.load(checkpoint_path, map_location=torch.device(device))
 model.load_state_dict(state['state_dict'])
 model.eval()
 
-#################### WAVEFORM ####################
-def get_wave_random():
+############################## WAVEFORM ##############################
+
+def get_waveform_random():
     path = audio_files[random.randint(0, len(audio_files) - 1)]
     wave, _ = librosa.load(path, sr=None)
 
@@ -71,17 +68,20 @@ def get_prediction(wave):
 
     return pred, latent_mu, latent_logvar
 
-def set_wave_random(index):
+def set_waveform(index, waveform):
     global waveforms
 
-    waveforms[index, :] = get_wave_random()
+    waveforms[index, :] = waveform
 
     if latent_space:
         set_prediction(index)
 
+def set_waveform_random(index):
+    set_waveform(index, get_waveform_random())
+
 def set_waveforms_random():
     for i in range(4):
-        set_wave_random(i)
+        set_waveform_random(i)
 
 def set_prediction(index):
     global predictions, mu, logvar
@@ -112,32 +112,9 @@ def interpolate2d(x, y):
 
     return interp
 
-#################### OSC ####################
-def reset(address: str, *osc_arguments: List[Any]) -> None:
-    global waveforms
+############################## CLIENT ##############################
 
-    waveforms = np.zeros((4, sample_size)).astype('float32')
-    client.send_message("/reset", get_wave_random().tolist())
-    send_waveforms()
-
-def randomize_all(address: str, *osc_arguments: List[Any]) -> None:
-    set_waveforms_random()
-    send_waveforms()
-
-def set_random(address: str, *osc_arguments: List[Any]) -> None:
-    index = int(osc_arguments[0])
-    set_wave_random(index)
-    send_wave(index)
-
-def morph(address: str, *osc_arguments: List[Any]) -> None:
-    global x, y
-    x = osc_arguments[0]
-    y = osc_arguments[1]
-
-    output = interpolate2d(x, y)
-    send_output(output)
-
-def send_wave(index):
+def send_waveform(index):
     if latent_space:
         client.send_message("/waveform/" + chr(index+65), predictions[index, :].tolist())
     else:
@@ -151,7 +128,40 @@ def send_output(output):
 
 def send_waveforms():
     for i in range(4):
-        send_wave(i)
+        send_waveform(i)
+
+############################## SERVER ##############################
+
+def reset(address: str, *osc_arguments: List[Any]) -> None:
+    global waveforms
+
+    waveforms = np.zeros((4, sample_size)).astype('float32')
+    client.send_message("/reset", get_waveform_random().tolist())
+    send_waveforms()
+
+def randomize_all(address: str, *osc_arguments: List[Any]) -> None:
+    set_waveforms_random()
+    send_waveforms()
+
+def set_wave_random(address: str, *osc_arguments: List[Any]) -> None:
+    index = int(osc_arguments[0])
+    set_waveform_random(index)
+    send_waveform(index)
+
+def set_wave_output(address: str, *osc_arguments: List[Any]) -> None:
+    index = int(osc_arguments[0])
+    output = np.array(osc_arguments)[1:].astype('float32')
+
+    set_waveform(index, output)
+    send_waveform(index)
+
+def morph(address: str, *osc_arguments: List[Any]) -> None:
+    global x, y
+    x = osc_arguments[0]
+    y = osc_arguments[1]
+
+    output = interpolate2d(x, y)
+    send_output(output)
 
 def toggle_latent(address: str, *osc_arguments: List[Any]) -> None:
     global latent_space
@@ -163,8 +173,16 @@ def toggle_latent(address: str, *osc_arguments: List[Any]) -> None:
 
     send_waveforms()
 
+def feedback(address: str, *osc_arguments: List[Any]) -> None:
+    output = np.array(osc_arguments).astype('float32')
+    pred, _, _ = get_prediction(output)
+
+    send_output(pred.numpy())
+
+############################## MAIN ##############################
+
 if __name__ == "__main__":
-    #Parse arguments
+    # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--receiveIP", default="127.0.0.1",
         help="The ip of the OSC server")
@@ -184,17 +202,14 @@ if __name__ == "__main__":
 
     verbose = args.verbose
 
-
-    #import audio configs
-    #n_bins = int(config['audio'].getint(num_octaves) * config['audio'].getint(bins_per_octave))
-
-
     dispatcher = dispatcher.Dispatcher()
     dispatcher.map("/reset", reset)
     dispatcher.map("/randomize", randomize_all)
-    dispatcher.map("/waveform", set_random)
+    dispatcher.map("/waveform/random", set_wave_random)
     dispatcher.map("/morphing", morph)
     dispatcher.map("/latent", toggle_latent)
+    dispatcher.map("/feedback", feedback)
+    dispatcher.map("/waveform/output", set_wave_output)
 
     server = osc_server.ThreadingOSCUDPServer(
       (args.receiveIP, args.receivePORT), dispatcher)
@@ -202,16 +217,5 @@ if __name__ == "__main__":
     print("Listening to {}".format(server.server_address))
     client = SimpleUDPClient(args.sendIP, args.sendPORT)  # Create client
     print("Sending to {}".format((args.sendIP, args.sendPORT)))
-
-    audio_device_list = sd.query_devices()
-    #Following is to generate the umenu in Max GUI
-    client.send_message("/audio/devicelist", "clear")
-    for i in range(len(audio_device_list)):
-        client.send_message("/audio/devicelist", str(i)+' '+audio_device_list[i]['name'])
-
-    print(str(audio_device_list))
-
-    print('Current audio device: {}'.format(sd.default.device))
-    client.send_message("/audio/io", '{} {}'.format(sd.default.device[0], sd.default.device[1]) )
 
     server.serve_forever()
