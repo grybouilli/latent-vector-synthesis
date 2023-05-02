@@ -2,7 +2,7 @@ import os
 import torch
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 
-from lvs.dataset import TestDataset, ToTensor
+from rawvae.dataset import TestDataset, ToTensor
 
 import numpy as np
 import librosa
@@ -18,6 +18,7 @@ def init_test_audio(workdir, test_audio, my_test_audio, sampling_rate, segment_l
 
   # List the test audio files from the dataset
   test_files = [f for f in my_test_audio.glob('*.wav')]
+
 
   with open( audio_log_dir.joinpath(test_audio+'.txt'), 'w') as test_audio_txt:
     test_audio_txt.writelines( "{}\n".format(test_file) for test_file in test_files)

@@ -1,4 +1,4 @@
-#N canvas 0 28 1440 872 12;
+#N canvas 0 0 1440 900 12;
 #N canvas 0 22 450 278 (subpatch) 0;
 #X array A 600 float 0;
 #X coords 0 1 599 -1 200 140 1 0 0;
@@ -12,7 +12,7 @@
 -1 -1;
 #X obj 1138 552 vcf~ 1000 1;
 #X obj 1275 624 hsl 128 15 0 1 0 0 empty empty empty -2 -8 0 10 -262144
--1 -1 3600 1;
+-1 -1 2400 1;
 #X obj 1210 654 *~;
 #N canvas 0 22 450 278 (subpatch) 0;
 #X array B 600 float 0;
@@ -107,7 +107,7 @@ resize \$1 \; output resize \$1;
 #X connect 7 0 1 0;
 #X restore 142 69 pd osc-client;
 #X obj 186 30 r osc_message;
-#N canvas 0 28 1440 872 circle 1;
+#N canvas 0 0 1440 900 circle 0;
 #X obj 200 182 snapshot~;
 #X obj 200 214 sin;
 #X obj 200 151 *~ 6.28;
@@ -144,7 +144,7 @@ resize \$1 \; output resize \$1;
 #X connect 16 0 6 0;
 #X restore 552 555 pd circle;
 #X obj 590 501 hsl 128 15 0 1 0 0 empty empty empty -2 -8 0 10 -262144
--1 -1 2000 1;
+-1 -1 900 1;
 #X obj 348 196 r frequency;
 #X obj 348 230 v f0;
 #X obj 1109 89 expr f0*0.5;
@@ -154,8 +154,8 @@ resize \$1 \; output resize \$1;
 1;
 #X obj 313 52 oscformat latent;
 #X obj 313 81 s osc_message;
-#X obj 646 530 hsl 128 15 0 1 0 0 empty empty empty -2 -8 0 10 -262144
--1 -1 11900 1;
+#X obj 648 529 hsl 128 15 0 1 0 0 empty empty empty -2 -8 0 10 -262144
+-1 -1 8728 1;
 #X obj 25 148 oscformat reset;
 #X obj 43 674 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
 1;
@@ -170,9 +170,9 @@ resize \$1 \; output resize \$1;
 #X msg 118 693 1 250 \, 0 250 750 \, 0 250 1000;
 #X obj 118 665 metro 1250;
 #X obj 1253 471 hsl 128 15 100 10000 1 0 empty empty empty -2 -8 0
-10 -262144 -1 -1 7339 1;
+10 -262144 -1 -1 12700 1;
 #X obj 1251 354 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1
-1 1;
+0 1;
 #N canvas 0 28 1440 872 lfo 0;
 #X obj 173 171 snapshot~;
 #X obj 98 135 metro 50;
@@ -193,7 +193,7 @@ resize \$1 \; output resize \$1;
 #X obj 1251 439 + 500;
 #X obj 1251 409 * 2000;
 #X obj 1260 500 hsl 128 15 0 10 0 0 empty empty empty -2 -8 0 10 -262144
--1 -1 767 1;
+-1 -1 2300 1;
 #X obj 59 538 array get output;
 #X obj 59 512 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
 -1;
@@ -208,7 +208,7 @@ resize \$1 \; output resize \$1;
 #X obj 283 479 array get output;
 #X obj 283 569 s osc_message;
 #X obj 283 396 hradio 30 1 0 4 empty empty empty 0 -8 0 10 -262144
--1 -1 0;
+-1 -1 0.537675;
 #X obj 283 540 oscformat waveform output;
 #X obj 283 510 list prepend;
 #X obj 325 157 oscformat waveform random;
@@ -234,7 +234,7 @@ resize \$1 \; output resize \$1;
 #X connect 6 0 1 0;
 #X restore 822 526 pd lfo;
 #X obj 864 500 hsl 128 15 0 1 0 0 empty empty empty -2 -8 0 10 -262144
--1 -1 2900 1;
+-1 -1 1331 1;
 #X obj 1110 426 *~;
 #N canvas 0 28 1440 872 delay 0;
 #X obj 216 256 delwrite~ delay 5000;
@@ -255,7 +255,7 @@ resize \$1 \; output resize \$1;
 #X connect 8 0 0 0;
 #X restore 1175 245 pd delay;
 #X obj 1260 210 hsl 128 15 0 0.99 0 0 empty empty empty -2 -8 0 10
--262144 -1 -1 10400 1;
+-262144 -1 -1 10600 1;
 #X obj 1178 426 *~;
 #N canvas 0 28 1440 872 vco 0;
 #X obj 508 153 r samplesize;
@@ -273,29 +273,29 @@ resize \$1 \; output resize \$1;
 #X connect 5 0 1 0;
 #X restore 1108 209 pd vco;
 #X obj 1129 280 vsl 15 128 0 1 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 9100 1;
+-1 -1 4500 1;
 #X obj 1196 276 vsl 15 128 0 1 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 3300 1;
 #X floatatom 1109 176 5 0 0 0 - - -;
 #X obj 1112 145 hsl 128 15 10 800 1 0 empty empty empty -2 -8 0 10
--262144 -1 -1 3772 1;
+-262144 -1 -1 5781 1;
 #X obj 1294 61 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
 -1 -1;
 #X obj 1294 89 expr f0*2;
 #X obj 550 398 hsl 420 20 0 1 0 0 empty empty empty -2 -8 0 10 -262144
--1 -1 17800 1;
+-1 -1 27404 1;
 #X obj 998 73 vsl 20 300 1 0 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 18700 1;
+-1 -1 5803 1;
 #X obj 510 440 s x;
 #X obj 998 398 s y;
-#X obj 1085 652 r x;
-#X obj 987 620 r y;
+#X obj 928 657 r x;
+#X obj 966 628 r y;
 #X obj 480 356 r x_mod;
 #X obj 552 591 s x_mod;
 #X obj 626 591 s y_mod;
 #X obj 998 34 r y_mod;
 #X obj 822 560 s x_mod;
-#X obj 987 655 t b f;
+#X obj 966 656 t b f;
 #X obj 283 444 t b f;
 #X connect 2 0 5 2;
 #X connect 3 0 5 4;

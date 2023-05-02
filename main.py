@@ -19,8 +19,8 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms
 
-from rawvae.model import VAE, loss_function
-from rawvae.dataset import AudioDataset, ToTensor
+from lvs.model import VAE, loss_function
+from lvs.dataset import AudioDataset, ToTensor
 
 sampling_rate = 44100
 sample_size = 600
