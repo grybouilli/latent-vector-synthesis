@@ -38,7 +38,7 @@ latent_space = False
 
 segment_length = 600
 hop_length = 600
-n_units = 2048
+n_units = 2056 # (!)
 latent_dim = 256
 
 waveforms = np.zeros((4, sample_size)).astype('float32')
@@ -48,6 +48,7 @@ predictions = np.zeros((4, sample_size)).astype('float32')
 
 model = VAE(segment_length, n_units, latent_dim).to(device)
 checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-001/model/checkpoints/ckpt_00990')
+checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-006/model/checkpoints/ckpt_01000')
 state = torch.load(checkpoint_path, map_location=torch.device(device))
 model.load_state_dict(state['state_dict'])
 model.eval()
