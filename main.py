@@ -26,7 +26,7 @@ sampling_rate = 44100
 sample_size = 600
 f0 = sampling_rate / sample_size
 
-audio_fold = Path(r'/Users/david/Documents/GitHub/latent-vector-synthesis/content/audio')
+audio_fold = Path(r'./content/audio')
 audio_files = [f for f in audio_fold.glob('*.wav')]
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -38,7 +38,7 @@ latent_space = False
 
 segment_length = 600
 hop_length = 600
-n_units = 2056 # (!)
+n_units = 2048
 latent_dim = 256
 
 waveforms = np.zeros((4, sample_size)).astype('float32')
@@ -47,8 +47,7 @@ logvar = torch.zeros(4, latent_dim)
 predictions = np.zeros((4, sample_size)).astype('float32')
 
 model = VAE(segment_length, n_units, latent_dim).to(device)
-# checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-001/model/checkpoints/ckpt_00990')
-checkpoint_path = Path(r'/Users/david/Documents/Datasets/Audio/AKWF/nospectral_workstation/run-006/model/checkpoints/ckpt_01000')
+checkpoint_path = Path(r'./content/checkpoints/ckpt_00990_1')
 state = torch.load(checkpoint_path, map_location=torch.device(device))
 model.load_state_dict(state['state_dict'])
 model.eval()
@@ -137,6 +136,10 @@ def reset(address: str, *osc_arguments: List[Any]) -> None:
     global waveforms
 
     waveforms = np.zeros((4, sample_size)).astype('float32')
+
+    if latent_space:
+        set_predictions()
+
     client.send_message("/reset", get_waveform_random().tolist())
     send_waveforms()
 
