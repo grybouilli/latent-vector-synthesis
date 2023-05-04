@@ -52,6 +52,16 @@ state = torch.load(checkpoint_path, map_location=torch.device(device))
 model.load_state_dict(state['state_dict'])
 model.eval()
 
+def get_std():
+    audio = np.array([librosa.load(f, sr=None)[0] for f in audio_files])
+
+    with torch.no_grad():
+        mu, logvar = model.encode(torch.tensor(audio))
+
+    return mu.std(0).mean(), logvar.std(0).mean()
+
+mu_std, logvar_std = get_std()
+
 ############################## WAVEFORM ##############################
 
 def get_waveform_random():
@@ -159,13 +169,6 @@ def set_wave_output(address: str, *osc_arguments: List[Any]) -> None:
     set_waveform(index, output)
     send_waveform(index)
 
-def set_wave_feedback(address: str, *osc_arguments: List[Any]) -> None:
-    index = int(osc_arguments[0])
-
-    pred, _, _ = get_prediction(waveforms[index, :])
-    set_waveform(index, pred.numpy())
-    send_waveform(index)
-
 def morph(address: str, *osc_arguments: List[Any]) -> None:
     global x, y
     x = osc_arguments[0]
@@ -189,6 +192,29 @@ def feedback(address: str, *osc_arguments: List[Any]) -> None:
     pred, _, _ = get_prediction(output)
 
     send_output(pred.numpy())
+
+def set_wave_feedback(address: str, *osc_arguments: List[Any]) -> None:
+    index = int(osc_arguments[0])
+
+    pred, _, _ = get_prediction(waveforms[index, :])
+    set_waveform(index, pred.numpy())
+    send_waveform(index)
+
+def set_wave_perturb(address: str, *osc_arguments: List[Any]) -> None:
+    index = int(osc_arguments[0])
+
+    if not latent_space:
+        set_prediction(index)
+
+    mu_rand = torch.normal(mu[index, :], mu_std)
+    logvar_rand = torch.normal(logvar[index, :], logvar_std)
+
+    with torch.no_grad():
+        pred_z = model.reparameterize(mu_rand, logvar_rand)
+        pred = model.decode(pred_z)
+
+    set_waveform(index, pred.numpy())
+    send_waveform(index)
 
 ############################## MAIN ##############################
 
@@ -222,6 +248,7 @@ if __name__ == "__main__":
     dispatcher.map("/output/feedback", feedback)
     dispatcher.map("/waveform/output", set_wave_output)
     dispatcher.map("/waveform/feedback", set_wave_feedback)
+    dispatcher.map("/waveform/perturb", set_wave_perturb)
 
     server = osc_server.ThreadingOSCUDPServer(
       (args.receiveIP, args.receivePORT), dispatcher)
