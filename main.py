@@ -47,7 +47,7 @@ logvar = torch.zeros(4, latent_dim)
 predictions = np.zeros((4, sample_size)).astype('float32')
 
 model = VAE(segment_length, n_units, latent_dim).to(device)
-checkpoint_path = Path(r'./content/checkpoints/ckpt_00990_1')
+checkpoint_path = Path(r'./content/checkpoints/ckpt_00990_2')
 state = torch.load(checkpoint_path, map_location=torch.device(device))
 model.load_state_dict(state['state_dict'])
 model.eval()
@@ -159,6 +159,13 @@ def set_wave_output(address: str, *osc_arguments: List[Any]) -> None:
     set_waveform(index, output)
     send_waveform(index)
 
+def set_wave_feedback(address: str, *osc_arguments: List[Any]) -> None:
+    index = int(osc_arguments[0])
+
+    pred, _, _ = get_prediction(waveforms[index, :])
+    set_waveform(index, pred.numpy())
+    send_waveform(index)
+
 def morph(address: str, *osc_arguments: List[Any]) -> None:
     global x, y
     x = osc_arguments[0]
@@ -212,8 +219,9 @@ if __name__ == "__main__":
     dispatcher.map("/waveform/random", set_wave_random)
     dispatcher.map("/morphing", morph)
     dispatcher.map("/latent", toggle_latent)
-    dispatcher.map("/feedback", feedback)
+    dispatcher.map("/output/feedback", feedback)
     dispatcher.map("/waveform/output", set_wave_output)
+    dispatcher.map("/waveform/feedback", set_wave_feedback)
 
     server = osc_server.ThreadingOSCUDPServer(
       (args.receiveIP, args.receivePORT), dispatcher)
