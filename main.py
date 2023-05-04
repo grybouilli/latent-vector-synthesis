@@ -60,7 +60,10 @@ def get_std():
 
     return mu.std(0).mean(), logvar.std(0).mean()
 
-mu_std, logvar_std = get_std()
+mu_std = 0.3327
+logvar_std = 0.3065
+
+# mu_std, logvar_std = get_std()
 
 ############################## WAVEFORM ##############################
 
