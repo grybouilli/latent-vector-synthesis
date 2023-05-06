@@ -136,12 +136,12 @@ def send_waveform(index):
     output = interpolate2d(x, y)
     send_output(output)
 
-def send_output(output):
-    client.send_message("/waveform/output", output.tolist())
-
 def send_waveforms():
     for i in range(4):
         send_waveform(i)
+
+def send_output(output):
+    client.send_message("/waveform/output", output.tolist())
 
 ############################## SERVER ##############################
 
@@ -219,6 +219,16 @@ def set_wave_perturb(address: str, *osc_arguments: List[Any]) -> None:
     set_waveform(index, pred.numpy())
     send_waveform(index)
 
+    output = interpolate2d(x, y)
+    send_output(output)
+
+def set_gamma(address: str, *osc_arguments: List[Any]) -> None:
+    global mu_std, logvar_std
+
+    gamma = osc_arguments[0]
+    mu_std = gamma * 0.3327
+    logvar_std = gamma * 0.3065
+
 ############################## MAIN ##############################
 
 if __name__ == "__main__":
@@ -252,6 +262,7 @@ if __name__ == "__main__":
     dispatcher.map("/waveform/output", set_wave_output)
     dispatcher.map("/waveform/feedback", set_wave_feedback)
     dispatcher.map("/waveform/perturb", set_wave_perturb)
+    dispatcher.map("/waveform/perturb/gamma", set_gamma)
 
     server = osc_server.ThreadingOSCUDPServer(
       (args.receiveIP, args.receivePORT), dispatcher)
