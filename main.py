@@ -53,23 +53,27 @@ model.load_state_dict(state['state_dict'])
 model.eval()
 
 def get_std():
-    audio = np.array([librosa.load(f, sr=None)[0] for f in audio_files])
+    audio = np.array([librosa.load(f, sr=sampling_rate)[0] for f in audio_files])
 
     with torch.no_grad():
         mu, logvar = model.encode(torch.tensor(audio))
 
     return mu.std(0).mean(), logvar.std(0).mean()
 
-mu_std = 0.3327
-logvar_std = 0.3065
+mu_std_orig = 0.3327
+logvar_std_orig = 0.3065
 
-# mu_std, logvar_std = get_std()
+# mu_std_orig, logvar_std_orig = get_std()
+# print((mu_std_orig, logvar_std_orig))
+
+mu_std = mu_std_orig
+logvar_std = logvar_std_orig
 
 ############################## WAVEFORM ##############################
 
 def get_waveform_random():
     path = audio_files[random.randint(0, len(audio_files) - 1)]
-    wave, _ = librosa.load(path, sr=None)
+    wave, _ = librosa.load(path, sr=sampling_rate)
 
     return wave
 
@@ -226,8 +230,8 @@ def set_gamma(address: str, *osc_arguments: List[Any]) -> None:
     global mu_std, logvar_std
 
     gamma = osc_arguments[0]
-    mu_std = gamma * 0.3327
-    logvar_std = gamma * 0.3065
+    mu_std = gamma * mu_std_orig
+    logvar_std = gamma * logvar_std_orig
 
 ############################## MAIN ##############################
 
