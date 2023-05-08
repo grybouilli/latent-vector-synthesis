@@ -60,8 +60,8 @@ def get_std():
 
     return mu.std(0).mean(), logvar.std(0).mean()
 
-mu_std_orig = 0.3327
-logvar_std_orig = 0.3065
+mu_std_orig = torch.tensor(0.3327)
+logvar_std_orig = torch.tensor(0.3065)
 
 # mu_std_orig, logvar_std_orig = get_std()
 # print((mu_std_orig, logvar_std_orig))
