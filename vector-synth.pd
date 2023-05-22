@@ -1,4 +1,4 @@
-#N canvas 130 45 1159 652 12;
+#N canvas 189 58 1159 652 12;
 #N canvas 0 25 1440 762 delay 0;
 #X obj 384 421 delwrite~ delay 5000;
 #X obj 384 372 *~;
@@ -155,7 +155,7 @@
 #X obj 128 300 catch~ filter_in;
 #X obj 121 151 hsl 162 15 0 127 0 0 empty empty filter\ cutoff -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X obj 324 307 mtof~;
-#X obj 121 196 hsl 162 15 0 10 0 0 empty empty resonance -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
+#X obj 121 196 hsl 162 15 0 5 0 0 empty empty resonance -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X obj 131 439 throw~ lp_out;
 #X obj 241 440 throw~ bp_out;
 #X text 115 110 FILTER;
@@ -182,7 +182,7 @@
 #X coords 0 -1 1 1 200 130 2 100 100;
 #X restore 716 183 pd filter;
 #N canvas 0 28 805 631 reverb 0;
-#X obj 119 146 hsl 162 15 0 95 0 0 empty empty feedback -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
+#X obj 119 146 hsl 162 15 0 99 0 0 empty empty feedback -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X obj 119 188 hsl 162 15 0 127 0 0 empty empty crossover\ frequency -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X obj 119 230 hsl 162 15 0 100 0 0 empty empty hf\ damping -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X text 113 108 REVERB;

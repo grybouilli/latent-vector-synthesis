@@ -47,11 +47,12 @@ logvar = torch.zeros(4, latent_dim)
 predictions = np.zeros((4, sample_size)).astype('float32')
 
 model = VAE(segment_length, n_units, latent_dim).to(device)
-checkpoint_path = Path(r'./content/checkpoints/ckpt_00990_2')
+checkpoint_path = Path(r'./content/checkpoints/ckpt_00990')
 state = torch.load(checkpoint_path, map_location=torch.device(device))
 model.load_state_dict(state['state_dict'])
 model.eval()
 
+# functions for calculating standard deviations on latent vectors
 def get_std():
     audio = np.array([librosa.load(f, sr=sampling_rate)[0] for f in audio_files])
 
