@@ -125,8 +125,8 @@
 #X array D 600 float 0;
 #X coords 0 1 599 -1 200 140 1 0 0;
 #X restore 353 297 graph;
-#X obj 131 457 hsl 420 20 0 1 0 1 empty empty empty -2 -8 0 10 #fcfcfc #000000 #000000 0 1;
-#X obj 573 134 vsl 20 300 1 0 0 1 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 29900 1;
+#X obj 131 457 hsl 420 20 0 1 0 1 empty empty empty -2 -8 0 10 #fcfcfc #000000 #000000 4194 1;
+#X obj 573 134 vsl 20 300 1 0 0 1 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 23924 1;
 #X obj 33 438 r x_mod;
 #X obj 573 65 r y_mod;
 #X obj 552 610 s osc_message;

@@ -29,7 +29,8 @@ f0 = sampling_rate / sample_size
 audio_fold = Path(r'./content/audio')
 audio_files = [f for f in audio_fold.glob('*.wav')]
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cpu')
 
 x = 0
 y = 0
