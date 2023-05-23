@@ -1,8 +1,12 @@
 # Latent Vector Synthesis
 
-### Installation
+Latent Vector Synthesis is a sound synthesis method combining latent audio spaces and vector synthesis techniques. 
 
-#### Python
+This prototype of a Latent Vector Synthesizer incorporates  a Variational Autoencoder (VAE) model trained on short single cycle waveforms that enables interpolations and explorations of sonic textures. The generated waveforms are used as part of a vector/wavetable synthesis engine developed in Pure Data. 
+
+## Installation
+
+### Python
 
 1 - Download and install Anaconda for your operating system: https://docs.anaconda.com/free/anaconda/install/index.html
 
@@ -34,11 +38,11 @@ pip install librosa
 pip install python-osc
 ```
 
-#### Pure Data
+### Pure Data
 
 Install Pure Data (Pd-vanilla): [https://puredata.info](https://puredata.info/)
 
-### Run
+## Run
 
 1 - Open a terminal and run the Python script:
 
