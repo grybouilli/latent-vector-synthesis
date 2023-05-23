@@ -4,6 +4,8 @@ Latent Vector Synthesis is a sound synthesis method combining latent audio space
 
 This prototype of a Latent Vector Synthesizer incorporates  a Variational Autoencoder (VAE) model trained on short single cycle waveforms that enables interpolations and explorations of sonic textures. The generated waveforms are used as part of a vector/wavetable synthesis engine developed in Pure Data. 
 
+This project was part of my Master's Thesis and builds on the work of Tatar et al. [1, 2]. 
+
 ## Installation
 
 ### Python
@@ -61,3 +63,10 @@ Wait until the osc-infoformation appear (for sending/receiving osc-messages).
 * In the lower right corner of the GUI, make sure to toggle AUDIO OUT and raise the gain. 
 
 4 - Play!
+
+## References
+
+\[1\] Kıvanç Tatar, Daniel Bisig, and Philippe Pasquier. Latent Timbre Synthesis: Audio-based variational auto-encoders for music composition and sound design applications. *Neural Computing and Applications*, 33(1):67–84, 2021. URL: [https://link.springer.com/10.1007/s00521-020-05424-2](https://link.springer.com/10.1007/s00521-020-05424-2), doi:10.1007/s00521-020-05424-2
+
+\[2\] Kıvanç Tatar, Kelsey Cotton, and Daniel Bisig. Sound design strategies for latent audio space explorations using deep learning architectures. In *Proceedings of Sound and Music Computing 2023*, 2023.
+
