@@ -59,10 +59,10 @@ Wait until the osc-infoformation appear (for sending/receiving osc-messages).
 3 - Run latent-vector-synth.pd in Pure Data.
 
 * Make sure the right audio output device is selected (Go to Media —> Audio Settings…)
-* In the upper left corner of the GUI, press RESET and then RANDOMIZE ALL. Make sure the DSP toggle is on.
-* In the lower right corner of the GUI, make sure to toggle AUDIO OUT and raise the gain. 
+* Press RESET and then RANDOMIZE ALL. Make sure the DSP toggle is on.
+* Make sure to toggle AUDIO OUT and raise the gain. 
 
-4 - Play!
+4 - Happy droning!
 
 ## References
 
