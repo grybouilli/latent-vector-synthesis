@@ -10,7 +10,6 @@ from pythonosc import osc_server
 from typing import List, Any
 from pythonosc.udp_client import SimpleUDPClient
 import warnings
-import sounddevice as sd
 import json
 
 import torch
