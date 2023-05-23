@@ -44,20 +44,20 @@ Install Pure Data (Pd-vanilla): [https://puredata.info](https://puredata.info/)
 
 ## Run
 
-1 - Open a terminal and run the Python script:
+1 - Open a terminal and navigate to the cloned repository.
+
+2 - Run the Python script:
 
 ```
 python main.py
 ```
 
-Wait until the osc-info appear (for listening and sending). 
+Wait until the osc-infoformation appear (for sending/receiving osc-messages). 
 
-2 - Open Pure Data and run latent-vector-synth.pd
+3 - Run latent-vector-synth.pd in Pure Data.
 
-3 - Make sure the right audio output device is selected (Go to Media —> Audio Settings…)
+* Make sure the right audio output device is selected (Go to Media —> Audio Settings…)
+* In the upper left corner of the GUI, press RESET and then RANDOMIZE ALL. Make sure the DSP toggle is on.
+* In the lower right corner of the GUI, make sure to toggle AUDIO OUT and raise the gain. 
 
-4 - In the upper left corner of the GUI, press RESET and then RANDOMIZE ALL.
-
-5 - In the lower right corner of the GUI, make sure to toggle AUDIO OUT and raise the gain . Also, make sure the DSP toggle is on.
-
-6 - Play!
+4 - Play!
