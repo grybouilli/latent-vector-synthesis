@@ -12,6 +12,8 @@ from pythonosc.udp_client import SimpleUDPClient
 import warnings
 import json
 
+import pyext 
+
 import torch
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torch import nn, optim
@@ -150,6 +152,7 @@ def send_output(output):
 
 ############################## SERVER ##############################
 
+
 def reset(address: str, *osc_arguments: List[Any]) -> None:
     global waveforms
 
@@ -158,7 +161,7 @@ def reset(address: str, *osc_arguments: List[Any]) -> None:
     if latent_space:
         set_predictions()
 
-    client.send_message("/reset", get_waveform_random().tolist())
+    # client.send_message("/reset", get_waveform_random().tolist())
     send_waveforms()
 
 def randomize_all(address: str, *osc_arguments: List[Any]) -> None:
@@ -260,16 +263,16 @@ def mainloop():
     verbose = args.verbose
 
     dispat = dispatcher.Dispatcher()
-    dispat.map("/reset", reset)
-    dispat.map("/randomize", randomize_all)
-    dispat.map("/waveform/random", set_wave_random)
-    dispat.map("/morphing", morph)
-    dispat.map("/latent", toggle_latent)
+    dispat.map("/reset", reset) # done
+    dispat.map("/randomize", randomize_all) # done
+    dispat.map("/waveform/random", set_wave_random) # done
+    dispat.map("/morphing", morph) # done
+    dispat.map("/latent", toggle_latent) # done
     dispat.map("/output/feedback", feedback)
-    dispat.map("/waveform/output", set_wave_output)
-    dispat.map("/waveform/feedback", set_wave_feedback)
-    dispat.map("/waveform/perturb", set_wave_perturb)
-    dispat.map("/waveform/perturb/gamma", set_gamma)
+    dispat.map("/waveform/output", set_wave_output) # done 
+    dispat.map("/waveform/feedback", set_wave_feedback) 
+    dispat.map("/waveform/perturb", set_wave_perturb) # done
+    dispat.map("/waveform/perturb/gamma", set_gamma) # done 
 
     server = osc_server.ThreadingOSCUDPServer(
       (args.receiveIP, args.receivePORT), dispat)
@@ -279,3 +282,135 @@ def mainloop():
     print("Sending to {}".format((args.sendIP, args.sendPORT)))
 
     server.serve_forever()
+
+####################### PY/PYEXT VERSION ##############################
+
+outputref = None
+def assignoutput(*arg):
+    global outputref
+    outputref = pyext.Buffer(arg[0])
+
+def reset2(*args):
+    global waveforms
+
+    A = pyext.Buffer(args[0])
+    B = pyext.Buffer(args[1])
+    C = pyext.Buffer(args[2])
+    D = pyext.Buffer(args[3])
+
+    waveforms = np.zeros((4, sample_size)).astype('float32')
+
+    if latent_space:
+        set_predictions()
+
+    send_waveforms2(A,B,C,D)
+
+def send_waveforms2(*args):
+    for i in range (len(args)):
+        send_waveform2(i, args[i])
+
+def send_waveform2(index, wvfm):
+    if latent_space:
+        wvfm[:] = predictions[index, :]
+    else:
+        wvfm[:] = waveforms[index, :]
+    
+    output = interpolate2d(x, y)
+    send_output2(output)
+
+def send_output2(newoutput, prevoutput=None):
+    if prevoutput:
+        prevoutput[:] = newoutput
+        return
+    global outputref
+    if outputref == None:
+        print("send_output2 : Could not send data to output. Output is not set. (Make a call to assignoutput ?)")
+        return
+    outputref[:] = newoutput
+
+def randomize_all2(*args):
+    A = pyext.Buffer(args[0])
+    B = pyext.Buffer(args[1])
+    C = pyext.Buffer(args[2])
+    D = pyext.Buffer(args[3])
+    set_waveforms_random()
+    send_waveforms2(A,B,C,D)
+
+def morph2(*args):
+    global x, y
+    x = args[0]
+    y = args[1]
+    prevoutput = pyext.Buffer(args[2])
+    output = interpolate2d(x, y)
+    send_output2(output, prevoutput)
+
+def refresh(*arg):
+    arr = pyext.Buffer(arg[0])
+    arr[:] *= 1
+
+def set_wave_random2(*args):
+    index = int(args[0])
+    arr = pyext.Buffer(args[index+1])
+
+    set_waveform_random(index) # no need to rewrite
+    send_waveform2(index, arr)
+
+def set_wave_output2(*args):
+    # *args = [index:int] output A B C D
+    index = int(args[0])
+    output = pyext.Buffer(args[1])
+    savespace = pyext.Buffer(args[index+2])
+
+    set_waveform(index, output)
+    send_waveform2(index, savespace)
+
+def toggle_latent2(*args):
+    global latent_space
+
+    latent_space = bool(args[0])
+    A = pyext.Buffer(args[1])
+    B = pyext.Buffer(args[2])
+    C = pyext.Buffer(args[3])
+    D = pyext.Buffer(args[4])
+
+    if latent_space:
+        set_predictions()
+
+    send_waveforms2(A,B,C,D)
+
+def set_wave_perturb2(*args):
+    global latent_space
+
+    index = int(args[0])
+    wvfm = pyext.Buffer(args[index+1])
+
+    if not latent_space:
+        set_prediction(index)
+
+    mu_rand = torch.normal(mu[index, :], mu_std)
+    logvar_rand = torch.normal(logvar[index, :], logvar_std)
+
+    with torch.no_grad():
+        pred_z = model.reparameterize(mu_rand, logvar_rand)
+        pred = model.decode(pred_z)
+
+    set_waveform(index, pred.numpy())
+    send_waveform2(index, wvfm)
+
+    output = interpolate2d(x, y)
+    send_output2(output)
+
+def set_gamma2(*args: List[Any]):
+    global mu_std, logvar_std
+
+    gamma = args[0]
+    mu_std = gamma * mu_std_orig
+    logvar_std = gamma * logvar_std_orig
+
+def set_wave_feedback2(*args: List[Any]):
+    index = int(args[0])
+    wvfm = pyext.Buffer(args[index+1])
+
+    pred, _, _ = get_prediction(waveforms[index, :])
+    set_waveform(index, pred.numpy())
+    send_waveform2(index, wvfm)
